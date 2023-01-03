@@ -4,11 +4,7 @@ using doku_solver.grid;
 
 namespace doku_solver;
 
-public static class DokuSolver {
-    public static void Main() {
-        new Tester().TestAlgorithm(Algorithm.RandomBruteForce, true, 2);
-    }
-    
+public static class OldDokuSolver {
     public static void DisplayGrid(Grid grid) {
         Console.WriteLine("-----------------");
         grid.Cursor.Reset();

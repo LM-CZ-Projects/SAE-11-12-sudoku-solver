@@ -2,23 +2,31 @@
 
 namespace doku_solver;
 
+/// <summary>
+/// Input class of the program
+/// </summary>
 public class DokuSolver{
+    /// <summary>
+    /// Input method of the program
+    /// </summary>
     public static void Main(){
-        new Menu();
+        Menu.DisplayMain();
     }
 }
 
-class Menu{
+/// <summary>
+/// Class used for menu display and input
+/// </summary>
+static class Menu{
 
-    public Menu(){
-        DisplayMain();
-    }
-
-    private void DisplayMain(){
+    /// <summary>
+    /// Display main menu
+    /// </summary>
+    public static void DisplayMain(){
         Console.WriteLine("Welcome to the Doku Solver!");
         Console.WriteLine("1 - Solve a Sudoku Grid");
         Console.WriteLine("2 - Leave the program");
-        int input = int.Parse(AwaitInput(null));
+        int input = int.Parse(AwaitInput());
         switch (input){
             case 1:
                 Console.Clear();
@@ -35,10 +43,13 @@ class Menu{
         }
     }
 
-    private void DisplayFile(){
+    /// <summary>
+    /// Ask a file to the user
+    /// </summary>
+    private static void DisplayFile(){
         Console.WriteLine($"Please enter the path to the file (current path : {Environment.CurrentDirectory})");
         Console.WriteLine("1 - Back to main menu");
-        string stringInput = AwaitInput(null);
+        string stringInput = AwaitInput();
         try{
             int input = int.Parse(stringInput);
             switch (input){
@@ -68,14 +79,19 @@ class Menu{
         }
         
     }
-    private void DisplayAlgorithm(string gridFile){
+    
+    /// <summary>
+    /// Ask the user an algorithm to use
+    /// </summary>
+    /// <param name="gridFile">File name</param>
+    private static void DisplayAlgorithm(string gridFile){
         
     }
 
     /// <summary>
     /// Display a grid to the console
     /// </summary>
-    /// <param name="grid"></param>
+    /// <param name="grid">Grid object</param>
     public static void DisplayGrid(Grid grid){
         
     }
@@ -85,15 +101,24 @@ class Menu{
     /// </summary>
     /// <param name="inputMessage">Display a message before the ReadLine</param>
     /// <returns>String printed by the user</returns>
-    private string AwaitInput(string? inputMessage){
+    private static string AwaitInput(string? inputMessage = null){
         if(inputMessage != null) Console.WriteLine(inputMessage);
         return Console.ReadLine() ?? string.Empty;
     }
 }
 
+/// <summary>
+/// Util to load a grid from a file
+/// </summary>
 class Loader{
-    public Grid LoadJson(string fileName){
-        short[]? flattenedGrid = JsonSerializer.Deserialize<short[]>(File.ReadAllText($"../../../grids/export/{fileName}.json"));
+    /// <summary>
+    /// Load a grid from a json file
+    /// </summary>
+    /// <param name="fileName">File name without extension</param>
+    /// <param name="path">File path</param>
+    /// <returns>Grid object</returns>
+    public Grid LoadJson(string fileName, string? path = "../../../grids/export/"){
+        short[]? flattenedGrid = JsonSerializer.Deserialize<short[]>(File.ReadAllText($"{path}{fileName}.json"));
         short[,] grid = new short[(int) Math.Sqrt(flattenedGrid!.Length), (int) Math.Sqrt(flattenedGrid.Length)];
         for (int i = 0; i < grid.GetLength(0); i++)
         for (int j = 0; j < grid.GetLength(1); j++)
@@ -101,12 +126,24 @@ class Loader{
         return new Grid(grid);
     }
 
-    public Grid LoadCsv(string fileName){
-        return null;
+    /// <summary>
+    /// Load a grid from a csv file
+    /// </summary>
+    /// <param name="fileName">File name without extension</param>
+    /// <param name="path">File path</param>
+    /// <returns>Grid object</returns>
+    public Grid LoadCsv(string fileName, string? path = "../../../grids/export/"){
+        return null!;
     }
 
-    public Grid LoadtTxt(string fileName){
-        short[] flattenArray = File.ReadAllLines(fileName)[0].Split(" ").Select(short.Parse).ToArray();
+    /// <summary>
+    /// Load a grid from a txt file
+    /// </summary>
+    /// <param name="fileName">File name without extension</param>
+    /// <param name="path">File path</param>
+    /// <returns>Grid object</returns>
+    public Grid LoadtTxt(string fileName, string? path = "../../../grids/export/"){
+        short[] flattenArray = File.ReadAllLines(path + fileName + ".txt")[0].Split(" ").Select(short.Parse).ToArray();
         int gridLength = (int) Math.Sqrt(flattenArray.Length);
         short[,] grid = new short[gridLength, gridLength];
         for (int i = 0; i < grid.GetLength(0); i++)
@@ -115,27 +152,46 @@ class Loader{
     }
 }
 
-
+/// <summary>
+/// Represents a two-dimensional grid of short values, along with a cursor to navigate the grid.
+/// </summary>
 public class Grid{
 
     private short[,] arrayGrid;
     private Cursor cursor;
     
+    /// <summary>
+    /// Constructs a new grid with the given size and initializes the cursor to the top-left position of the grid.
+    /// </summary>
+    /// <param name="gridSize">The size of the grid (i.e., the number of rows and columns).</param>
     public Grid(short gridSize){
         arrayGrid = new short[gridSize, gridSize];
         cursor = new Cursor(gridSize);
     }
     
+    /// <summary>
+    /// Constructs a new grid with the given values and initializes the cursor to the top-left position of the grid.
+    /// </summary>
+    /// <param name="inputGrid">The values to be placed in the grid.</param>
     public Grid(short[,] inputGrid){
         arrayGrid = CopyGrid(inputGrid);
         cursor = new Cursor((short)arrayGrid.GetLength(0));
     }
     
+    /// <summary>
+    /// Constructs a new grid with the same values and cursor position as the given grid.
+    /// </summary>
+    /// <param name="grid">The grid to be copied.</param>
     public Grid(Grid grid){
         arrayGrid = CopyGrid(grid.GetGrid());
         cursor = new Cursor((short)arrayGrid.GetLength(0));
     }
 
+    /// <summary>
+    /// Makes a copy of the given grid.
+    /// </summary>
+    /// <param name="oldArray">The grid to be copied.</param>
+    /// <returns>A copy of the given grid.</returns>
     public short[,] CopyGrid(short[,] oldArray){
         short[,] copy = new short[oldArray.GetLength(0), oldArray.GetLength(1)];
         for(short i = 0; i < oldArray.GetLength(0); i++){
@@ -146,87 +202,171 @@ public class Grid{
         return copy;
     }
     
+    /// <summary>
+    /// Returns the current values in the grid.
+    /// </summary>
+    /// <returns>A two-dimensional array representing the current values in the grid.</returns>
     public short[,] GetGrid(){
         return arrayGrid;
     }
     
+    /// <summary>
+    /// Returns the current cursor position.
+    /// </summary>
+    /// <returns>An instance of the Cursor class representing the current cursor position.</returns>
     public Cursor GetCursor(){
         return cursor;
     }
 
+    /// <summary>
+    /// Sets the value at the current cursor position.
+    /// </summary>
+    /// <param name="value">The value to be set at the current cursor position.</param>
     public void SetOnCursor(short value){
         arrayGrid[cursor.GetRow(), cursor.GetColumn()] = value;
     }
     
+    /// <summary>
+    /// Returns the value at the current cursor position.
+    /// </summary>
+    /// <returns>The value at the current cursor position.</returns>
     public short GetOnCursor(){
         return arrayGrid[cursor.GetRow(), cursor.GetColumn()];
     }
     
+    /// <summary>
+    /// Sets the value at the specified cursor position.
+    /// </summary>
+    /// <param name="_cursor">The cursor position at which the value will be set.</param>
+    /// <param name="value">The value to be set at the specified cursor position.</param>
     public void SetOnCursor(Cursor _cursor, short value){
         arrayGrid[_cursor.GetRow(), _cursor.GetColumn()] = value;
     }
     
+    /// <summary>
+    /// Returns the value at the specified cursor position.
+    /// </summary>
+    /// <param name="_cursor">The cursor position to be accessed.</param>
+    /// <returns>The value at the specified cursor position.</returns>
     public short GetOnCursor(Cursor _cursor){
         return arrayGrid[_cursor.GetRow(), _cursor.GetColumn()];
     }
     
+    /// <summary>
+    /// Sets the value at the specified position in the grid.
+    /// </summary>
+    /// <param name="row">The row of the position to be accessed.</param>
+    /// <param name="column">The column of the position to be accessed.</param>
+    /// <param name="value">The value to be set at the specified position.</param>
     public void SetOnPosition(short row, short column, short value){
         arrayGrid[row, column] = value;
     }
     
+    /// <summary>
+    /// Returns the value at the specified position in the grid.
+    /// </summary>
+    /// <param name="row">The row of the position to be accessed.</param>
+    /// <param name="column">The column of the position to be accessed.</param>
+    /// <returns>The value at the specified position in the grid.</returns>
     public short GetOnPosition(short row, short column){
         return arrayGrid[row, column];
     }
 
+    /// <summary>
+    /// Returns the size of the grid (i.e., the number of rows and columns).
+    /// </summary>
+    /// <returns>The size of the grid.</returns>
     public short GetLength(){
         return (short)arrayGrid.GetLength(0);
     }
 }
 
+/// <summary>
+/// Represents a cursor for navigating a two-dimensional grid of short values.
+/// </summary>
 public class Cursor{
     private short row;
     private short column;
     private short gridSize;
     
+    /// <summary>
+    /// Constructs a new cursor with the given position and grid size.
+    /// </summary>
+    /// <param name="row">The row of the cursor position.</param>
+    /// <param name="column">The column of the cursor position.</param>
+    /// <param name="gridSize">The size of the grid (i.e., the number of rows and columns).</param>
     public Cursor(short row, short column, short gridSize){
         this.row = row;
         this.column = column;
         this.gridSize = gridSize;
     }
 
+    /// <summary>
+    /// Constructs a new cursor with the same position and grid size as the given cursor.
+    /// </summary>
+    /// <param name="cursor">The cursor to be copied.</param>
     public Cursor(Cursor cursor){
         row = cursor.row;
         column = cursor.column;
         gridSize = cursor.gridSize;
     }
 
+    /// <summary>
+    /// Constructs a new cursor with the given grid size and initializes the position to the top-left corner of the grid.
+    /// </summary>
+    /// <param name="gridSize">The size of the grid (i.e., the number of rows and columns).</param>
     public Cursor(short gridSize){
         row = 0;
         column = 0;
         this.gridSize = gridSize;
     }
     
+    /// <summary>
+    /// Returns the row of the current cursor position.
+    /// </summary>
+    /// <returns>The row of the current cursor position.</returns>
     public short GetRow(){
         return row;
     }
     
+    /// <summary>
+    /// Returns the column of the current cursor position.
+    /// </summary>
+    /// <returns>The column of the current cursor position.</returns>
     public short GetColumn(){
         return column;
     }
     
+    /// <summary>
+    /// Sets the row of the current cursor position.
+    /// </summary>
+    /// <param name="posX">The new row of the cursor position.</param>
     public void SetRow(short posX){
         row = posX;
     }
     
+    /// <summary>
+    /// Sets the column of the current cursor position.
+    /// </summary>
+    /// <param name="posY">The new column of the cursor position.</param>
     public void SetColumn(short posY){
         column = posY;
     }
 
+    /// <summary>
+    /// Sets the row and column of the current cursor position.
+    /// </summary>
+    /// <param name="posX">The new row of the cursor position.</param>
+    /// <param name="posY">The new column of the cursor position.</param>
     public void Set(short posX, short posY){
         row = posX;
         column = posY;
     }
 
+    /// <summary>
+    /// Moves the cursor to the next position in the grid, wrapping around to the first column of the next row if necessary.
+    /// </summary>
+    /// <returns>The updated cursor position.</returns>
     public Cursor Next(){
         column++;
         if (column != gridSize) return this;
@@ -235,6 +375,10 @@ public class Cursor{
         return this;
     }
 
+    /// <summary>
+    /// Moves the cursor to the previous position in the grid, wrapping around to the last column of the previous row if necessary.
+    /// </summary>
+    /// <returns>The updated cursor position.</returns>
     public Cursor Previous(){
         column--;
         if (column != -1) return this;
@@ -243,23 +387,50 @@ public class Cursor{
         return this;
     }
     
+    /// <summary>
+    /// Determines whether the cursor has a position after the current one in the grid.
+    /// </summary>
+    /// <returns>True if the cursor has a position after the current one in the grid, false otherwise.</returns>
     public bool HasNext(){
         return row != gridSize - 1 || column != gridSize - 1;
     }
     
+    /// <summary>
+    /// Determines whether the cursor has a position before the current one in the grid.
+    /// </summary>
+    /// <returns>True if the cursor has a position before the current one in the grid, false otherwise.</returns>
     public bool HasPrevious(){
         return row != 0 || column != 0;
     }
 }
 
+/// <summary>
+/// Contains various algorithms for solving Sudoku puzzles.
+/// </summary>
 public static class Algorithm{
+    /// <summary>
+    /// A backtracking algorithm for solving Sudoku puzzles.
+    /// </summary>
     public class BackTrack : Solver{
+        /// <summary>
+        /// Solves the given Sudoku puzzle using a backtracking algorithm.
+        /// </summary>
+        /// <param name="grid">The Sudoku puzzle to be solved.</param>
+        /// <param name="maxIterations">The maximum number of iterations to perform (not used by this algorithm).</param>
+        /// <returns>The solved Sudoku puzzle.</returns>
         public override Grid Solve(Grid grid, int maxIterations){
             Grid solvedGrid = new Grid(grid);
             Backtrack(solvedGrid, 0, 0);
             return solvedGrid;
         }
 
+        /// <summary>
+        /// Recursive helper function for the backtracking algorithm.
+        /// </summary>
+        /// <param name="grid">The Sudoku puzzle being solved.</param>
+        /// <param name="row">The current row of the cursor position.</param>
+        /// <param name="column">The current column of the cursor position.</param>
+        /// <returns>True if the puzzle has been solved, false otherwise.</returns>
         private bool Backtrack(Grid grid, short row, short column){
             grid.GetCursor().Set(row, column);
             if (!grid.GetCursor().HasNext()) return true;
@@ -280,6 +451,14 @@ public static class Algorithm{
             return false;
         }
 
+        /// <summary>
+        /// Determines whether the given value is present in the same row, column, or box as the given position in the grid.
+        /// </summary>
+        /// <param name="grid">The Sudoku puzzle being solved.</param>
+        /// <param name="row">The row of the given position.</param>
+        /// <param name="column">The column of the given position.</param>
+        /// <param name="value">The value to be checked.</param>
+        /// <returns>True if the value is present in the same row, column, or box as the given position, false otherwise.</returns>
         private bool IsPresentForSlot(Grid grid, short row, short column, int value){
             for(int i = 0; i < grid.GetLength(); i++){
                 if (grid.GetGrid()[row, i] == value) return true;
@@ -295,7 +474,16 @@ public static class Algorithm{
         }
     }
     
-    public class BruteForce : Solver {
+    /// <summary>
+    /// A brute force algorithm for solving Sudoku puzzles.
+    /// </summary>
+    public class SlotPerSlot : Solver {
+        /// <summary>
+        /// Solves the given Sudoku puzzle using a brute force algorithm.
+        /// </summary>
+        /// <param name="grid">The Sudoku puzzle to be solved.</param>
+        /// <param name="maxIterations">The maximum number of iterations to perform (not used by this algorithm).</param>
+        /// <returns>The solved Sudoku puzzle.</returns>
         public override Grid Solve(Grid grid, int maxIterations) {
             List<short> possibilities = new List<short>();
             short[ , ] tab = grid.GetGrid();
@@ -321,37 +509,11 @@ public static class Algorithm{
             return grid;
         }
     }
-    
-    public class OtherBackTrack: Solver {
-        private int GRID_SIZE;
-        public override Grid Solve(Grid grid, int maxIterations) {
-            GRID_SIZE = grid.GetLength();
-            SmartSolve(grid.GetGrid());
-            return grid;
-        }
 
-        private bool SmartSolve(short[,] grid) {
-            for (int i = 0; i < GRID_SIZE; i++) {
-                for (int j = 0; j < GRID_SIZE; j++) {
-                    if (grid[i, j] == 0) {
-                        for (int t = 1; t <= GRID_SIZE; t++) {
-                            if (IsValidPlacement(grid, t, i, j)) {
-                                grid[i, j] = (short) t;
-                                if (SmartSolve(grid)) return true;
-                                grid[i, j] = 0;
-                            }
-                        }
-
-                        return false;
-                    }
-                }
-            }
-
-            return true;
-        }
-    }
-    
-    public class RandomBruteForce : Solver {
+    /// <summary>
+    /// Abstract base class for Sudoku solver algorithms.
+    /// </summary>
+    public class BruteForce : Solver {
         public override Grid Solve(Grid grid, int maxIterations) {
             Random random = new Random();
             short[ , ] tab = grid.GetGrid();
@@ -366,31 +528,27 @@ public static class Algorithm{
             return grid;
         }
     }
-    
-    public class SlotPerSlot : Solver{
-        public override Grid Solve(Grid grid, int maxIterations){
-            Grid targetGrid = new Grid(grid);
-            int iterations = 0;
-            while(!IsFilled(targetGrid) && iterations < maxIterations){
-                while (targetGrid.GetCursor().HasNext()){
-                    if (targetGrid.GetOnCursor() == 0){
-                        List<short> possibilities = GetSlotPossibilities(targetGrid, targetGrid.GetCursor().GetRow(), targetGrid.GetCursor().GetColumn());
-                        if (possibilities.Count == 1)
-                            targetGrid.SetOnCursor(possibilities[0]);
-                    }
-                    targetGrid.GetCursor().Next();
-                }
-                targetGrid.GetCursor().Set(0, 0);
-                iterations++;
-            }
-            return targetGrid;
-        }
-    }
 }
 
+/// <summary>
+/// Abstract base class for Sudoku solver algorithms.
+/// </summary>
 public abstract class Solver : Doku{
+    /// <summary>
+    /// Solves the given Sudoku puzzle using a specific algorithm.
+    /// </summary>
+    /// <param name="grid">The Sudoku puzzle to be solved.</param>
+    /// <param name="maxIterations">The maximum number of iterations to perform (algorithm dependent).</param>
+    /// <returns>The solved Sudoku puzzle.</returns>
     public abstract Grid Solve(Grid grid, int maxIterations);
     
+    /// <summary>
+    /// Determines whether the given number is present in the specified row of the given Sudoku puzzle.
+    /// </summary>
+    /// <param name="grid">The Sudoku puzzle being checked.</param>
+    /// <param name="number">The number to be checked for.</param>
+    /// <param name="row">The row to be checked.</param>
+    /// <returns>True if the number is present in the specified row, false otherwise.</returns>
     protected bool IsInRow(short[,] grid, int number, int row) {
         for (int i = 0; i < grid.GetLength(0); i++)
             if (grid[row, i] == number)
@@ -398,6 +556,13 @@ public abstract class Solver : Doku{
         return false;
     }
 
+    /// <summary>
+    /// Determines whether the given number is present in the specified column of the given Sudoku puzzle.
+    /// </summary>
+    /// <param name="grid">The Sudoku puzzle being checked.</param>
+    /// <param name="number">The number to be checked for.</param>
+    /// <param name="column">The column to be checked.</param>
+    /// <returns>True if the number is present in the specified column, false otherwise.</returns>
     protected bool IsInColumn(short[,] grid, int number, int column) {
         for (int i = 0; i < grid.GetLength(0); i++)
             if (grid[i, column] == number)
@@ -405,6 +570,14 @@ public abstract class Solver : Doku{
         return false;
     }
 
+    /// <summary>
+    /// Determines whether the given number is present in the same row, column, or box as the specified position in the given Sudoku puzzle.
+    /// </summary>
+    /// <param name="grid">The Sudoku puzzle being checked.</param>
+    /// <param name="number">The number to be checked for.</param>
+    /// <param name="row">The row of the specified position.</param>
+    /// <param name="column">The column of the specified position.</param>
+    /// <returns>True if the number is present in the same row, column, or box as the specified position, false otherwise.</returns>
     protected bool IsInSection(short[,] grid, int number, int row, int column) {
         int boxSize = (int) Math.Sqrt(grid.GetLength(0));
         int localRow = row - row % boxSize;
@@ -417,6 +590,14 @@ public abstract class Solver : Doku{
         return false;
     }
 
+    /// <summary>
+    /// Determines whether the given number can be placed at the specified position in the given Sudoku puzzle.
+    /// </summary>
+    /// <param name="grid">The Sudoku puzzle being checked.</param>
+    /// <param name="number">The number to be placed.</param>
+    /// <param name="row">The row of the specified position.</param>
+    /// <param name="column">The column of the specified position.</param>
+    /// <returns>True if the number can be placed at the specified position, false otherwise.</returns>
     protected bool IsValidPlacement(short[,] grid, int number, int row, int column) {
         return !IsInRow(grid, number, row) &&
                !IsInColumn(grid, number, column) &&
@@ -425,6 +606,11 @@ public abstract class Solver : Doku{
 }
 
 public class Doku{
+    /// <summary>
+    /// Makes a copy of the given 2D array.
+    /// </summary>
+    /// <param name="tab">The 2D array to be copied.</param>
+    /// <returns>A copy of the given 2D array.</returns>
     protected int[,] Copy(int[,] tab){
         int[,] nTab = new int[tab.GetLength(0), tab.GetLength(1)];
         for (int i = 0; i < tab.GetLength(0); i++)
@@ -433,6 +619,11 @@ public class Doku{
         return nTab;
     }
 
+    /// <summary>
+    /// Determines whether the given Sudoku puzzle is filled (i.e. all of its positions are filled with numbers).
+    /// </summary>
+    /// <param name="tab">The Sudoku puzzle being checked.</param>
+    /// <returns>True if the puzzle is filled, false otherwise.</returns>
     protected bool IsFilled(short[,] tab){
         bool isFilled = true;
         for (int i = 0; i < tab.GetLength(0) && isFilled; i++)
@@ -442,10 +633,20 @@ public class Doku{
         return isFilled;
     }
     
+    /// <summary>
+    /// Determines whether the given Sudoku puzzle is filled (i.e. all of its positions are filled with numbers).
+    /// </summary>
+    /// <param name="grid">The Sudoku puzzle being checked.</param>
+    /// <returns>True if the puzzle is filled, false otherwise.</returns>
     protected bool IsFilled(Grid grid){
         return IsFilled(grid.GetGrid());
     }
 
+    /// <summary>
+    /// Determines whether the given Sudoku puzzle is solved (i.e. all of its positions are filled with numbers and the puzzle is valid).
+    /// </summary>
+    /// <param name="tab">The Sudoku puzzle being checked.</param>
+    /// <returns>True if the puzzle is solved, false otherwise.</returns>
     protected bool IsSolved(short[ , ] tab) {
         bool isSolved = true;
         for (int i = 0; i < tab.GetLength(0) && isSolved; i++){
@@ -457,6 +658,11 @@ public class Doku{
         return isSolved;
     }
 
+    /// <summary>
+    /// Determines whether the given Sudoku puzzle is solved (i.e. all of its positions are filled with numbers and the puzzle is valid).
+    /// </summary>
+    /// <param name="grid">The Sudoku puzzle being checked.</param>
+    /// <returns>True if the puzzle is solved, false otherwise.</returns>
     protected bool IsSolved(Grid grid) {
         return IsSolved(grid.GetGrid());
     }
@@ -466,6 +672,13 @@ public class Doku{
     private readonly List<short> _sectionPossibilities = new();
     private readonly List<short> _possibilities = new();
     
+    /// <summary>
+    /// Gets a list of the numbers that can be placed in the given position of the given Sudoku puzzle.
+    /// </summary>
+    /// <param name="tab">The Sudoku puzzle being checked.</param>
+    /// <param name="row">The row of the specified position.</param>
+    /// <param name="column">The column of the specified position.</param>
+    /// <returns>A list of numbers that can be placed in the specified position.</returns>
     protected List<short> GetSlotPossibilities(short[,] tab, int row, int column){
         _possibilities.Clear();
         GetRowPossibilities(tab, row);
@@ -477,9 +690,22 @@ public class Doku{
         return _possibilities;
     }
     
+    /// <summary>
+    /// Gets a list of the numbers that can be placed in the given position of the given Sudoku puzzle.
+    /// </summary>
+    /// <param name="grid">The Sudoku puzzle being checked.</param>
+    /// <param name="row">The row of the specified position.</param>
+    /// <param name="column">The column of the specified position.</param>
+    /// <returns>A list of numbers that can be placed in the specified position.</returns>
     protected List<short> GetSlotPossibilities(Grid grid, short row, short column){
         return GetSlotPossibilities(grid.GetGrid(), row, column);
     }
+    
+    /// <summary>
+    /// Gets a list of the numbers that are not present in the given column of the given Sudoku puzzle.
+    /// </summary>
+    /// <param name="tab">The Sudoku puzzle being checked.</param>
+    /// <param name="column">The column being checked.</param>
     private void GetColumnPossibilities(short[,] tab, int column){
         _columnPossibilities.Clear();
         for(short i = 1; i <= tab.GetLength(0); i++)
@@ -489,6 +715,11 @@ public class Doku{
                 _columnPossibilities.Remove(tab[i, column]);
     }
     
+    /// <summary>
+    /// Gets a list of the numbers that are not present in the given row of the given Sudoku puzzle.
+    /// </summary>
+    /// <param name="tab">The Sudoku puzzle being checked.</param>
+    /// <param name="row">The row being checked.</param>
     private void GetRowPossibilities(short[,] tab, int row){
         _rowPossibilities.Clear();
         for(short i = 1; i <= tab.GetLength(1); i++)
@@ -498,6 +729,12 @@ public class Doku{
                 _rowPossibilities.Remove(tab[row, i]);
     }
     
+    /// <summary>
+    /// Gets a list of the numbers that are not present in the same section as the given position in the given Sudoku puzzle.
+    /// </summary>
+    /// <param name="tab">The Sudoku puzzle being checked.</param>
+    /// <param name="row">The row of the specified position.</param>
+    /// <param name="column">The column of the specified position.</param>
     private void GetSectionPossibilities(short[,] tab, int row, int column){
         _sectionPossibilities.Clear();
         for(short i = 1; i <= tab.GetLength(1); i++)
@@ -512,19 +749,32 @@ public class Doku{
     }
 }
 
+/// <summary>
+/// A class for timing actions.
+/// </summary>
 public class DokuTimer{
     
     private double startTime;
     private double endTime;
     
+    /// <summary>
+    /// Starts the timer.
+    /// </summary>
     public void Start(){
         startTime = DateTimeOffset.Now.ToUnixTimeMilliseconds() * 1D / 1000;
     }
 
+    /// <summary>
+    /// Stops the timer.
+    /// </summary>
     public void Stop(){
         endTime = DateTimeOffset.Now.ToUnixTimeMilliseconds() * 1D / 1000;
     }
 
+    /// <summary>
+    /// Gets the elapsed time between the start and end times of the timer.
+    /// </summary>
+    /// <returns>The elapsed time, in seconds, between the start and end times of the timer.</returns>
     public double GetResult(){
         return Math.Round(endTime - startTime, 3);
     }

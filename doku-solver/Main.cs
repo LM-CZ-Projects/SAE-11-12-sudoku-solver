@@ -1,6 +1,4 @@
-﻿using System.Reflection;
-using System.Text.Json;
-using doku_solver.doku.solvers.algorithms;
+﻿using System.Text.Json;
 
 namespace doku_solver;
 
@@ -56,7 +54,7 @@ class Menu{
             }
         }
         catch (Exception e){
-            Grid grid = null;
+            Grid? grid = null;
             if (stringInput.EndsWith(".json"))
                 grid = new Loader().LoadJson(stringInput);
             if (grid != null){
@@ -73,7 +71,20 @@ class Menu{
     private void DisplayAlgorithm(string gridFile){
         
     }
+
+    /// <summary>
+    /// Display a grid to the console
+    /// </summary>
+    /// <param name="grid"></param>
+    public static void DisplayGrid(Grid grid){
+        
+    }
     
+    /// <summary>
+    /// Await input from the user
+    /// </summary>
+    /// <param name="inputMessage">Display a message before the ReadLine</param>
+    /// <returns>String printed by the user</returns>
     private string AwaitInput(string? inputMessage){
         if(inputMessage != null) Console.WriteLine(inputMessage);
         return Console.ReadLine() ?? string.Empty;
@@ -90,11 +101,11 @@ class Loader{
         return new Grid(grid);
     }
 
-    public Grid LoadCSV(string fileName){
+    public Grid LoadCsv(string fileName){
         return null;
     }
 
-    public Grid LoadTXT(string fileName){
+    public Grid LoadtTxt(string fileName){
         short[] flattenArray = File.ReadAllLines(fileName)[0].Split(" ").Select(short.Parse).ToArray();
         int gridLength = (int) Math.Sqrt(flattenArray.Length);
         short[,] grid = new short[gridLength, gridLength];
@@ -241,37 +252,8 @@ public class Cursor{
     }
 }
 
-public class Algorithm{
-
-    public static readonly Algorithm SlotPerSlot = new(typeof(SlotPerSlot));
-    public static readonly Algorithm BruteForce = new(typeof(BruteForce));
-    public static readonly Algorithm Backtrack = new(typeof(BackTrack));
-    public static readonly Algorithm OtherBackTrack = new(typeof(OtherBackTrack));
-    public static readonly Algorithm RandomBruteForce = new(typeof(RandomBruteForce));
-
-    private readonly Type _type;
-
-    private Algorithm(Type type){
-        _type = type;
-    }
-
-    private Solver GetClass(){
-        return (Solver) Activator.CreateInstance(_type)! ?? throw new InvalidOperationException();
-    }
-
-    public Grid Solve(Grid grid, int maxIterations = 100){
-        return GetClass().Solve(grid, maxIterations);
-    }
-
-    public static List<Algorithm> GetAlgorithms(){
-        List<Algorithm> algorithms = new();
-        foreach (FieldInfo fieldInfo in typeof(Algorithm).GetFields())
-            if (fieldInfo.GetValue(null) is Algorithm algorithm)
-                algorithms.Add(algorithm);
-        return algorithms;
-    }
-    
-    class BackTrack : Solver{
+public static class Algorithm{
+    public class BackTrack : Solver{
         public override Grid Solve(Grid grid, int maxIterations){
             Grid solvedGrid = new Grid(grid);
             Backtrack(solvedGrid, 0, 0);
@@ -310,6 +292,98 @@ public class Algorithm{
             for (int c = boxColStart; c < boxColStart + sqrt; c++)
                 if (grid.GetGrid()[r, c] == value) return true;
             return false;
+        }
+    }
+    
+    public class BruteForce : Solver {
+        public override Grid Solve(Grid grid, int maxIterations) {
+            List<short> possibilities = new List<short>();
+            short[ , ] tab = grid.GetGrid();
+
+            do {
+                for (int i = 0; i < grid.GetLength(); i++) {
+                    for (int j = 0; j < grid.GetLength(); j++) {
+                        if (tab[ i, j ] != 0)
+                            continue;
+                    
+                        possibilities.Clear();
+
+                        for (short r = 1; r <= grid.GetLength(); r++)
+                            if (IsValidPlacement(tab, r, i, j))
+                                possibilities.Add(r);
+
+                        if (possibilities.Count == 1)
+                            tab[ i, j ] = possibilities[ 0 ];
+                    }
+                }
+            } while (!IsSolved(grid));
+        
+            return grid;
+        }
+    }
+    
+    public class OtherBackTrack: Solver {
+        private int GRID_SIZE;
+        public override Grid Solve(Grid grid, int maxIterations) {
+            GRID_SIZE = grid.GetLength();
+            SmartSolve(grid.GetGrid());
+            return grid;
+        }
+
+        private bool SmartSolve(short[,] grid) {
+            for (int i = 0; i < GRID_SIZE; i++) {
+                for (int j = 0; j < GRID_SIZE; j++) {
+                    if (grid[i, j] == 0) {
+                        for (int t = 1; t <= GRID_SIZE; t++) {
+                            if (IsValidPlacement(grid, t, i, j)) {
+                                grid[i, j] = (short) t;
+                                if (SmartSolve(grid)) return true;
+                                grid[i, j] = 0;
+                            }
+                        }
+
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+    }
+    
+    public class RandomBruteForce : Solver {
+        public override Grid Solve(Grid grid, int maxIterations) {
+            Random random = new Random();
+            short[ , ] tab = grid.GetGrid();
+
+            do {
+                for (int i = 0; i < grid.GetLength(); i++)
+                for (int j = 0; j < grid.GetLength(); j++)
+                    if (tab[ i, j ] == 0)
+                        tab[ i, j ] = (short) random.Next(1, grid.GetLength() + 1);
+            } while (!IsSolved(grid));
+        
+            return grid;
+        }
+    }
+    
+    public class SlotPerSlot : Solver{
+        public override Grid Solve(Grid grid, int maxIterations){
+            Grid targetGrid = new Grid(grid);
+            int iterations = 0;
+            while(!IsFilled(targetGrid) && iterations < maxIterations){
+                while (targetGrid.GetCursor().HasNext()){
+                    if (targetGrid.GetOnCursor() == 0){
+                        List<short> possibilities = GetSlotPossibilities(targetGrid, targetGrid.GetCursor().GetRow(), targetGrid.GetCursor().GetColumn());
+                        if (possibilities.Count == 1)
+                            targetGrid.SetOnCursor(possibilities[0]);
+                    }
+                    targetGrid.GetCursor().Next();
+                }
+                targetGrid.GetCursor().Set(0, 0);
+                iterations++;
+            }
+            return targetGrid;
         }
     }
 }
@@ -435,5 +509,23 @@ public class Doku{
             for (int j = squareColumn * squareSize; j < squareColumn * squareSize + squareSize; j++)
                 if(_sectionPossibilities.Contains(tab[i, j]))
                     _sectionPossibilities.Remove(tab[i, j]);
+    }
+}
+
+public class DokuTimer{
+    
+    private double startTime;
+    private double endTime;
+    
+    public void Start(){
+        startTime = DateTimeOffset.Now.ToUnixTimeMilliseconds() * 1D / 1000;
+    }
+
+    public void Stop(){
+        endTime = DateTimeOffset.Now.ToUnixTimeMilliseconds() * 1D / 1000;
+    }
+
+    public double GetResult(){
+        return Math.Round(endTime - startTime, 3);
     }
 }

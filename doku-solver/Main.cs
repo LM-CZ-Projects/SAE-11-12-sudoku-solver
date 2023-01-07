@@ -26,7 +26,7 @@ static class Menu{
         Console.WriteLine("Welcome to the Doku Solver!");
         Console.WriteLine("1 - Solve a Sudoku Grid");
         Console.WriteLine("2 - Leave the program");
-        int input = int.Parse(AwaitInput());
+        int input = int.Parse(AwaitInput(null, "0"));
         switch (input){
             case 1:
                 Console.Clear();
@@ -68,24 +68,52 @@ static class Menu{
             Grid? grid = null;
             if (stringInput.EndsWith(".json"))
                 grid = new Loader().LoadJson(stringInput);
+            else if(stringInput.EndsWith(".txt"))
+                grid = new Loader().LoadTxt(stringInput);
             if (grid != null){
                 Console.Clear();
-                DisplayAlgorithm(stringInput);
+                DisplayAlgorithm(grid);
             }else{
-                Console.Clear();
+                // Console.Clear();
                 Console.WriteLine("Invalid file");
                 DisplayFile();
             }
         }
-        
     }
     
     /// <summary>
     /// Ask the user an algorithm to use
     /// </summary>
-    /// <param name="gridFile">File name</param>
-    private static void DisplayAlgorithm(string gridFile){
-        
+    /// <param name="grid">Loaded grid</param>
+    private static void DisplayAlgorithm(Grid grid){
+        Console.WriteLine("Please enter the algorithm you want to use");
+        Console.WriteLine("1 - Backtrack");
+        Console.WriteLine("2 - Slot per slot");
+        Console.WriteLine("3 - Bruteforce");
+        Console.WriteLine("4 - Back to main menu");
+        int input = int.Parse(AwaitInput(null, "4"));
+        Solver solver;
+        switch (input){
+            case 1:
+                solver = new Algorithm.BackTrack();
+                break;
+            case 2:
+                solver = new Algorithm.SmartBruteforce();
+                break;
+            case 3:
+                solver = new Algorithm.BruteForce();
+                break;
+            default:
+                return;
+        }
+        Console.Clear();
+        int fillPercentage = int.Parse(AwaitInput("Enter the fill percentage to reach :", "100"));
+        Grid solvedGrid = solver.Solve(grid, fillPercentage);
+        Console.Clear();
+        Console.WriteLine("Base grid :");
+        DisplayGrid(grid);
+        Console.WriteLine("Solved grid :");
+        DisplayGrid(solvedGrid);
     }
 
     /// <summary>
@@ -93,17 +121,31 @@ static class Menu{
     /// </summary>
     /// <param name="grid">Grid object</param>
     public static void DisplayGrid(Grid grid){
-        
+        grid.GetCursor().Set(0, 0);
+        do{
+            Console.Write(grid.GetOnCursor());
+            Console.Write(" ");
+            grid.GetCursor().Next();
+            if(grid.GetCursor().GetColumn() == 0)
+                Console.WriteLine();
+        } while (grid.GetCursor().HasNext());
+        Console.Write(grid.GetOnCursor());
+        Console.WriteLine();
     }
     
     /// <summary>
     /// Await input from the user
     /// </summary>
     /// <param name="inputMessage">Display a message before the ReadLine</param>
+    /// <param name="fallbackValue">Value if ReadLine fail</param>
     /// <returns>String printed by the user</returns>
-    private static string AwaitInput(string? inputMessage = null){
+    private static string AwaitInput(string? inputMessage = null, string fallbackValue = ""){
         if(inputMessage != null) Console.WriteLine(inputMessage);
-        return Console.ReadLine() ?? string.Empty;
+        string input = Console.ReadLine() ?? fallbackValue;
+        if (input == ""){
+            input = fallbackValue;
+        }
+        return input;
     }
 }
 
@@ -118,11 +160,11 @@ class Loader{
     /// <param name="path">File path</param>
     /// <returns>Grid object</returns>
     public Grid LoadJson(string fileName, string? path = "../../../grids/export/"){
-        short[]? flattenedGrid = JsonSerializer.Deserialize<short[]>(File.ReadAllText($"{path}{fileName}.json"));
+        short[]? flattenedGrid = JsonSerializer.Deserialize<short[]>(File.ReadAllText($"{path}{fileName}"));
         short[,] grid = new short[(int) Math.Sqrt(flattenedGrid!.Length), (int) Math.Sqrt(flattenedGrid.Length)];
         for (int i = 0; i < grid.GetLength(0); i++)
-        for (int j = 0; j < grid.GetLength(1); j++)
-            grid[i, j] = flattenedGrid[i * grid.GetLength(0) + j];
+            for (int j = 0; j < grid.GetLength(1); j++)
+                grid[i, j] = flattenedGrid[i * grid.GetLength(0) + j];
         return new Grid(grid);
     }
 
@@ -132,7 +174,7 @@ class Loader{
     /// <param name="fileName">File name without extension</param>
     /// <param name="path">File path</param>
     /// <returns>Grid object</returns>
-    public Grid LoadCsv(string fileName, string? path = "../../../grids/export/"){
+    public Grid LoadCsv(string fileName, string? path = "../../../grids/"){
         return null!;
     }
 
@@ -142,12 +184,14 @@ class Loader{
     /// <param name="fileName">File name without extension</param>
     /// <param name="path">File path</param>
     /// <returns>Grid object</returns>
-    public Grid LoadtTxt(string fileName, string? path = "../../../grids/export/"){
-        short[] flattenArray = File.ReadAllLines(path + fileName + ".txt")[0].Split(" ").Select(short.Parse).ToArray();
+    public Grid LoadTxt(string fileName, string? path = "../../../grids/"){
+        Console.WriteLine(path + fileName);
+        short[] flattenArray = File.ReadAllLines(path + fileName)[0].Split(" ").Select(short.Parse).ToArray();
         int gridLength = (int) Math.Sqrt(flattenArray.Length);
         short[,] grid = new short[gridLength, gridLength];
-        for (int i = 0; i < grid.GetLength(0); i++)
-            grid[i % gridLength, i / gridLength] = flattenArray[i];
+        for (int i = 0; i < gridLength; i++)
+            for (int j = 0; j < gridLength; j++)
+                grid[i, j] = flattenArray[i * gridLength + j];
         return new Grid(grid);
     }
 }
@@ -194,11 +238,9 @@ public class Grid{
     /// <returns>A copy of the given grid.</returns>
     public short[,] CopyGrid(short[,] oldArray){
         short[,] copy = new short[oldArray.GetLength(0), oldArray.GetLength(1)];
-        for(short i = 0; i < oldArray.GetLength(0); i++){
-            for(short j = 0; j < oldArray.GetLength(1); j++){
+        for(short i = 0; i < oldArray.GetLength(0); i++)
+            for(short j = 0; j < oldArray.GetLength(1); j++)
                 copy[i,j] = oldArray[i,j];
-            }
-        }
         return copy;
     }
     
@@ -279,6 +321,15 @@ public class Grid{
     public short GetLength(){
         return (short)arrayGrid.GetLength(0);
     }
+
+    public int GetFillPercentage(){
+        int filledCount = 0;
+        for (int i = 0; i < arrayGrid.GetLength(0); i++)
+            for (int j = 0; j < arrayGrid.GetLength(1); j++)
+                if (arrayGrid[i, j] != 0)
+                    filledCount++;
+        return (int)((double)filledCount / (arrayGrid.GetLength(0) * arrayGrid.GetLength(1)) * 100);
+    }
 }
 
 /// <summary>
@@ -306,9 +357,13 @@ public class Cursor{
     /// </summary>
     /// <param name="cursor">The cursor to be copied.</param>
     public Cursor(Cursor cursor){
-        row = cursor.row;
-        column = cursor.column;
-        gridSize = cursor.gridSize;
+        row = cursor.GetRow();
+        column = cursor.GetColumn();
+        gridSize = cursor.GetGridSize();
+    }
+
+    private short GetGridSize(){
+        return gridSize;
     }
 
     /// <summary>
@@ -402,6 +457,10 @@ public class Cursor{
     public bool HasPrevious(){
         return row != 0 || column != 0;
     }
+    
+    public bool IsOutOfBounds(){
+        return row < 0 || row >= gridSize || column < 0 || column >= gridSize;
+    }
 }
 
 /// <summary>
@@ -416,39 +475,45 @@ public static class Algorithm{
         /// Solves the given Sudoku puzzle using a backtracking algorithm.
         /// </summary>
         /// <param name="grid">The Sudoku puzzle to be solved.</param>
-        /// <param name="maxIterations">The maximum number of iterations to perform (not used by this algorithm).</param>
+        /// <param name="fillPercentage">The fill percentage to reach before stopping</param>
         /// <returns>The solved Sudoku puzzle.</returns>
-        public override Grid Solve(Grid grid, int maxIterations){
+        public override Grid Solve(Grid grid, int fillPercentage){
             Grid solvedGrid = new Grid(grid);
-            Backtrack(solvedGrid, 0, 0);
-            return solvedGrid;
+            return Backtrack(solvedGrid, 0, 0, fillPercentage)!;
         }
-
+        
         /// <summary>
         /// Recursive helper function for the backtracking algorithm.
         /// </summary>
         /// <param name="grid">The Sudoku puzzle being solved.</param>
         /// <param name="row">The current row of the cursor position.</param>
         /// <param name="column">The current column of the cursor position.</param>
-        /// <returns>True if the puzzle has been solved, false otherwise.</returns>
-        private bool Backtrack(Grid grid, short row, short column){
-            grid.GetCursor().Set(row, column);
-            if (!grid.GetCursor().HasNext()) return true;
+        /// <param name="fillPercentage">The fill percentage to reach before stopping.</param>
+        /// <returns>The solved Sudoku puzzle, or null if the puzzle has not been solved yet.</returns>
+        private Grid? Backtrack(Grid grid, short row, short column, int fillPercentage){
+            Cursor cursor = new Cursor((short) grid.GetGrid().GetLength(0));
+            cursor.Set(row, column);
 
+            if (cursor.IsOutOfBounds()) return grid;
+
+            if (grid.GetFillPercentage() >= fillPercentage) return grid;
+            
             if (grid.GetOnPosition(row, column) != 0){
-                Cursor nextCursor = new Cursor(grid.GetCursor()).Next();
-                return Backtrack(grid, nextCursor.GetRow(), nextCursor.GetColumn());
+                Cursor nextCursor = new Cursor(cursor).Next();
+                return Backtrack(grid, nextCursor.GetRow(), nextCursor.GetColumn(), fillPercentage);
             }
 
             for (short i = 1; i <= grid.GetLength(); i++){
                 if (!IsPresentForSlot(grid, row, column, i)){
                     grid.SetOnPosition(row, column, i);
-                    Cursor nextCursor = new Cursor(grid.GetCursor()).Next();
-                    if (Backtrack(grid, nextCursor.GetRow(), nextCursor.GetColumn())) return true;
+                    Cursor nextCursor = new Cursor(cursor).Next();
+                    Grid? solvedGrid = Backtrack(grid, nextCursor.GetRow(), nextCursor.GetColumn(), fillPercentage);
+                    if (solvedGrid != null) return solvedGrid;
+                    grid.SetOnPosition(row, column, 0);
                 }
             }
-            grid.SetOnPosition(row, column, 0);
-            return false;
+
+            return null;
         }
 
         /// <summary>
@@ -468,8 +533,8 @@ public static class Algorithm{
             int boxRowStart = row - row % sqrt;
             int boxColStart = column - column % sqrt;
             for (int r = boxRowStart; r < boxRowStart + sqrt; r++)
-            for (int c = boxColStart; c < boxColStart + sqrt; c++)
-                if (grid.GetGrid()[r, c] == value) return true;
+                for (int c = boxColStart; c < boxColStart + sqrt; c++)
+                    if (grid.GetGrid()[r, c] == value) return true;
             return false;
         }
     }
@@ -477,55 +542,49 @@ public static class Algorithm{
     /// <summary>
     /// A brute force algorithm for solving Sudoku puzzles.
     /// </summary>
-    public class SlotPerSlot : Solver {
+    public class SmartBruteforce : Solver {
         /// <summary>
-        /// Solves the given Sudoku puzzle using a brute force algorithm.
+        /// Solves the given Sudoku puzzle using a slot per slot algorithm.
         /// </summary>
         /// <param name="grid">The Sudoku puzzle to be solved.</param>
-        /// <param name="maxIterations">The maximum number of iterations to perform (not used by this algorithm).</param>
+        /// <param name="fillPercentage">The fill percentage to reach before stopping</param>
         /// <returns>The solved Sudoku puzzle.</returns>
-        public override Grid Solve(Grid grid, int maxIterations) {
+        public override Grid Solve(Grid grid, int fillPercentage) {
+            Grid solvedGrid = new Grid(grid);
             List<short> possibilities = new List<short>();
-            short[ , ] tab = grid.GetGrid();
-
+            short[ , ] tab = solvedGrid.GetGrid();
             do {
-                for (int i = 0; i < grid.GetLength(); i++) {
-                    for (int j = 0; j < grid.GetLength(); j++) {
+                if (solvedGrid.GetFillPercentage() >= fillPercentage) return solvedGrid;
+                for (int i = 0; i < solvedGrid.GetLength(); i++) {
+                    for (int j = 0; j < solvedGrid.GetLength(); j++) {
                         if (tab[ i, j ] != 0)
                             continue;
-                    
                         possibilities.Clear();
-
-                        for (short r = 1; r <= grid.GetLength(); r++)
+                        for (short r = 1; r <= solvedGrid.GetLength(); r++)
                             if (IsValidPlacement(tab, r, i, j))
                                 possibilities.Add(r);
-
                         if (possibilities.Count == 1)
                             tab[ i, j ] = possibilities[ 0 ];
                     }
                 }
-            } while (!IsSolved(grid));
-        
-            return grid;
+            } while (!IsSolved(solvedGrid));
+            return solvedGrid;
         }
     }
 
-    /// <summary>
-    /// Abstract base class for Sudoku solver algorithms.
-    /// </summary>
     public class BruteForce : Solver {
-        public override Grid Solve(Grid grid, int maxIterations) {
+        public override Grid Solve(Grid grid, int fillPercentage) {
+            Grid solvedGrid = new Grid(grid);
             Random random = new Random();
-            short[ , ] tab = grid.GetGrid();
-
+            short[ , ] tab = solvedGrid.GetGrid();
             do {
-                for (int i = 0; i < grid.GetLength(); i++)
-                for (int j = 0; j < grid.GetLength(); j++)
-                    if (tab[ i, j ] == 0)
-                        tab[ i, j ] = (short) random.Next(1, grid.GetLength() + 1);
-            } while (!IsSolved(grid));
+                for (int i = 0; i < solvedGrid.GetLength(); i++)
+                    for (int j = 0; j < solvedGrid.GetLength(); j++)
+                        if (tab[ i, j ] == 0)
+                            tab[ i, j ] = (short) random.Next(1, solvedGrid.GetLength() + 1);
+            } while (!IsSolved(solvedGrid));
         
-            return grid;
+            return solvedGrid;
         }
     }
 }
@@ -538,9 +597,9 @@ public abstract class Solver : Doku{
     /// Solves the given Sudoku puzzle using a specific algorithm.
     /// </summary>
     /// <param name="grid">The Sudoku puzzle to be solved.</param>
-    /// <param name="maxIterations">The maximum number of iterations to perform (algorithm dependent).</param>
+    /// <param name="fillPercentage">The fill percentage the algorithm need to reach</param>
     /// <returns>The solved Sudoku puzzle.</returns>
-    public abstract Grid Solve(Grid grid, int maxIterations);
+    public abstract Grid Solve(Grid grid, int fillPercentage);
     
     /// <summary>
     /// Determines whether the given number is present in the specified row of the given Sudoku puzzle.

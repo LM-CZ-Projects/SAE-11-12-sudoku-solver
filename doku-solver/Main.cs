@@ -26,8 +26,8 @@ static class Menu{
     public static void DisplayMain(){
         Console.WriteLine("Welcome to the Doku Solver!");
         Console.WriteLine("1 - Solve a Sudoku Grid");
-        Console.WriteLine("1 - Fill HTML file");
-        Console.WriteLine("2 - Leave the program");
+        Console.WriteLine("2 - Fill HTML file");
+        Console.WriteLine("3 - Leave the program");
         int input = int.Parse(AwaitInput(null, "0"));
         switch (input){
             case 1:
@@ -174,48 +174,26 @@ static class Menu{
         Grid grid2 = new Loader().LoadTxt($"{fileName}_4x4.txt");
         Grid grid3 = new Loader().LoadTxt($"{fileName}_9x9.txt");
         Grid grid4 = new Loader().LoadTxt($"{fileName}_16x16.txt");
-        // TODO: temp
-        // string[] content = htmlContent.Split("\n");
-        // foreach(string line in content){
-        //     if (line.Contains("v%4-16")){
-        //         string modified = line.Replace("v%4-16", "3");
-        //         Console.WriteLine(modified);
-        //     }
-        // }
-        // htmlContent = htmlContent.Replace("v%4-15", "3");
         htmlContent = FillHtml(htmlContent, grid2);
         htmlContent = FillHtml(htmlContent, grid3);
         htmlContent = FillHtml(htmlContent, grid4);
-        // Console.WriteLine(htmlContent);
         new Loader().SaveHtml(htmlFileName, htmlContent);
     }
 
     private static string FillHtml(string htmlContent, Grid grid, bool solve = true){
         int gridLength = grid.GetLength();
-        for(int i = 0; i < gridLength; i++){
-            for(int j = 0; j < gridLength; j++){
+        for(int i = 0; i < gridLength; i++)
+            for(int j = 0; j < gridLength; j++)
                 htmlContent = htmlContent.Replace($">v%{gridLength}-{i * gridLength + j + 1}<", $">{grid.GetOnPosition((short) i, (short) j)}<");
-                // Console.WriteLine($"v%{gridLength}-{i * gridLength + j + 1}");
-                // Console.WriteLine(grid.GetOnPosition((short) i, (short) j).ToString());
-            }
-        }
         Grid partialSolvedGrid = new Algorithm.BackTrack().Solve(grid, 80);
-        for(int i = 0; i < gridLength; i++){
-            for(int j = 0; j < gridLength; j++){
+        for(int i = 0; i < gridLength; i++)
+            for(int j = 0; j < gridLength; j++)
                 htmlContent = htmlContent.Replace($">p%{gridLength}-{i * gridLength + j + 1}<", $">{partialSolvedGrid.GetOnPosition((short) i, (short) j)}<");
-                // Console.WriteLine($"p%{gridLength}-{i * gridLength + j + 1}");
-                // Console.WriteLine(partialSolvedGrid.GetOnPosition((short) i, (short) j));
-            }
-        }
         if (solve){
             Grid solvedGrid = new Algorithm.BackTrack().Solve(grid, 100);
-            for(int i = 0; i < gridLength; i++){
-                for(int j = 0; j < gridLength; j++){
+            for(int i = 0; i < gridLength; i++)
+                for(int j = 0; j < gridLength; j++)
                     htmlContent = htmlContent.Replace($">t%{gridLength}-{i * gridLength + j + 1}<", $">{solvedGrid.GetOnPosition((short) i, (short) j)}<");
-                    // Console.WriteLine($"t%{gridLength}-{i * gridLength + j + 1}");
-                    // Console.WriteLine(solvedGrid.GetOnPosition((short) i, (short) j).ToString());
-                }
-            }
         }
         return htmlContent;
     }

@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Text;
+using System.Text.Json;
 
 namespace doku_solver;
 
@@ -25,14 +26,19 @@ static class Menu{
     public static void DisplayMain(){
         Console.WriteLine("Welcome to the Doku Solver!");
         Console.WriteLine("1 - Solve a Sudoku Grid");
+        Console.WriteLine("1 - Fill HTML file");
         Console.WriteLine("2 - Leave the program");
         int input = int.Parse(AwaitInput(null, "0"));
         switch (input){
             case 1:
                 Console.Clear();
-                DisplayFile();
+                DisplaySolverFile();
                 break;
             case 2:
+                Console.Clear();
+                DisplayHtmlFile();
+                break;
+            case 3:
                 Environment.Exit(0);
                 break;
             default:
@@ -46,7 +52,7 @@ static class Menu{
     /// <summary>
     /// Ask a file to the user
     /// </summary>
-    private static void DisplayFile(){
+    private static void DisplaySolverFile(){
         Console.WriteLine($"Please enter the path to the file (current path : {Environment.CurrentDirectory})");
         Console.WriteLine("1 - Back to main menu");
         string stringInput = AwaitInput();
@@ -60,7 +66,7 @@ static class Menu{
                 default:
                     Console.Clear();
                     Console.WriteLine("Invalid input");
-                    DisplayFile();
+                    DisplaySolverFile();
                     break;
             }
         }
@@ -76,7 +82,7 @@ static class Menu{
             }else{
                 // Console.Clear();
                 Console.WriteLine("Invalid file");
-                DisplayFile();
+                DisplaySolverFile();
             }
         }
     }
@@ -114,6 +120,104 @@ static class Menu{
         DisplayGrid(grid);
         Console.WriteLine("Solved grid :");
         DisplayGrid(solvedGrid);
+    }
+
+    private static void DisplayHtmlFile(){
+        Console.WriteLine($"Please enter the path to the HTML file (current path : {Environment.CurrentDirectory})");
+        Console.WriteLine("1 - Back to main menu");
+        string stringInput = AwaitInput();
+        try{
+            int input = int.Parse(stringInput);
+            switch (input){
+                case 1:
+                    Console.Clear();
+                    DisplayMain();
+                    break;
+                default:
+                    Console.Clear();
+                    Console.WriteLine("Invalid input");
+                    DisplayMain();
+                    break;
+            }
+        }
+        catch (Exception e){
+            if (stringInput.EndsWith(".html")){
+                Console.Clear();
+                string htmlContent = new Loader().LoadHtml(stringInput);
+                string htmlFileName = stringInput;
+                Console.WriteLine($"Please enter the path to the grid files (format: <name>_<size>x<size>.txt) (current path : {Environment.CurrentDirectory})");
+                Console.WriteLine("1 - Back to main menu");
+                stringInput = AwaitInput();
+                try{
+                    int input = int.Parse(stringInput);
+                    switch (input){
+                        case 1:
+                            Console.Clear();
+                            DisplayMain();
+                            break;
+                        default:
+                            Console.Clear();
+                            Console.WriteLine("Invalid input");
+                            DisplayMain();
+                            break;
+                    }
+                }
+                catch (Exception ex){
+                    HtmlFileProcess(stringInput, htmlFileName, htmlContent);
+                }
+            }
+        }
+    }
+
+    private static void HtmlFileProcess(string fileName, string htmlFileName, string htmlContent){
+        htmlFileName = htmlFileName.Replace(".html", "_filled.html");
+        Grid grid2 = new Loader().LoadTxt($"{fileName}_4x4.txt");
+        Grid grid3 = new Loader().LoadTxt($"{fileName}_9x9.txt");
+        Grid grid4 = new Loader().LoadTxt($"{fileName}_16x16.txt");
+        // TODO: temp
+        // string[] content = htmlContent.Split("\n");
+        // foreach(string line in content){
+        //     if (line.Contains("v%4-16")){
+        //         string modified = line.Replace("v%4-16", "3");
+        //         Console.WriteLine(modified);
+        //     }
+        // }
+        // htmlContent = htmlContent.Replace("v%4-15", "3");
+        htmlContent = FillHtml(htmlContent, grid2);
+        htmlContent = FillHtml(htmlContent, grid3);
+        htmlContent = FillHtml(htmlContent, grid4);
+        // Console.WriteLine(htmlContent);
+        new Loader().SaveHtml(htmlFileName, htmlContent);
+    }
+
+    private static string FillHtml(string htmlContent, Grid grid, bool solve = true){
+        int gridLength = grid.GetLength();
+        for(int i = 0; i < gridLength; i++){
+            for(int j = 0; j < gridLength; j++){
+                htmlContent = htmlContent.Replace($">v%{gridLength}-{i * gridLength + j + 1}<", $">{grid.GetOnPosition((short) i, (short) j)}<");
+                // Console.WriteLine($"v%{gridLength}-{i * gridLength + j + 1}");
+                // Console.WriteLine(grid.GetOnPosition((short) i, (short) j).ToString());
+            }
+        }
+        Grid partialSolvedGrid = new Algorithm.BackTrack().Solve(grid, 80);
+        for(int i = 0; i < gridLength; i++){
+            for(int j = 0; j < gridLength; j++){
+                htmlContent = htmlContent.Replace($">p%{gridLength}-{i * gridLength + j + 1}<", $">{partialSolvedGrid.GetOnPosition((short) i, (short) j)}<");
+                // Console.WriteLine($"p%{gridLength}-{i * gridLength + j + 1}");
+                // Console.WriteLine(partialSolvedGrid.GetOnPosition((short) i, (short) j));
+            }
+        }
+        if (solve){
+            Grid solvedGrid = new Algorithm.BackTrack().Solve(grid, 100);
+            for(int i = 0; i < gridLength; i++){
+                for(int j = 0; j < gridLength; j++){
+                    htmlContent = htmlContent.Replace($">t%{gridLength}-{i * gridLength + j + 1}<", $">{solvedGrid.GetOnPosition((short) i, (short) j)}<");
+                    // Console.WriteLine($"t%{gridLength}-{i * gridLength + j + 1}");
+                    // Console.WriteLine(solvedGrid.GetOnPosition((short) i, (short) j).ToString());
+                }
+            }
+        }
+        return htmlContent;
     }
 
     /// <summary>
@@ -160,7 +264,7 @@ class Loader{
     /// <param name="path">File path</param>
     /// <returns>Grid object</returns>
     public Grid LoadJson(string fileName, string? path = "../../../grids/export/"){
-        short[]? flattenedGrid = JsonSerializer.Deserialize<short[]>(File.ReadAllText($"{path}{fileName}"));
+        short[]? flattenedGrid = JsonSerializer.Deserialize<short[]>(File.ReadAllText($"{path}{fileName}", Encoding.UTF8));
         short[,] grid = new short[(int) Math.Sqrt(flattenedGrid!.Length), (int) Math.Sqrt(flattenedGrid.Length)];
         for (int i = 0; i < grid.GetLength(0); i++)
             for (int j = 0; j < grid.GetLength(1); j++)
@@ -175,7 +279,7 @@ class Loader{
     /// <param name="path">File path</param>
     /// <returns>Grid object</returns>
     public Grid LoadCsv(string fileName, string? path = "../../../grids/"){
-        return null!;
+        throw new NotImplementedException(); 
     }
 
     /// <summary>
@@ -185,14 +289,21 @@ class Loader{
     /// <param name="path">File path</param>
     /// <returns>Grid object</returns>
     public Grid LoadTxt(string fileName, string? path = "../../../grids/"){
-        Console.WriteLine(path + fileName);
-        short[] flattenArray = File.ReadAllLines(path + fileName)[0].Split(" ").Select(short.Parse).ToArray();
+        short[] flattenArray = File.ReadAllLines(path + fileName, Encoding.UTF8)[0].Split(" ").Select(short.Parse).ToArray();
         int gridLength = (int) Math.Sqrt(flattenArray.Length);
         short[,] grid = new short[gridLength, gridLength];
         for (int i = 0; i < gridLength; i++)
             for (int j = 0; j < gridLength; j++)
                 grid[i, j] = flattenArray[i * gridLength + j];
         return new Grid(grid);
+    }
+    
+    public string LoadHtml(string fileName, string? path = "../../../grids/"){
+        return File.ReadAllText(path + fileName, Encoding.UTF8);
+    }
+    
+    public void SaveHtml(string fileName, string content, string? path = "../../../grids/"){
+        File.WriteAllText(path + fileName, content, Encoding.UTF8);
     }
 }
 

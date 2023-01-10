@@ -4,12 +4,71 @@ namespace doku_solver;
 
 public class V2{
     
+    private static string PATH = "grids";
+    
     public static void Main(){
-        
+        DisplayMenu();
     }
 
+    /// <summary>
+    /// Displays the main menu, allowing the user to select a grid file and an algorithm to solve it.
+    /// </summary>
     public static void DisplayMenu(){
-        
+        Dictionary<int, string> files = DisplayAvailableGrids();
+        string input = AwaitInput("Welcome to the Doku Solver! Select grid file to solve :", "");
+        int fileIndex;
+        short[,] grid;
+        if (int.TryParse(input, out fileIndex))
+            grid = LoadTxt(files[fileIndex]);
+        else
+            grid = LoadTxt(input);
+        DisplayAlgorithmChoice(grid);
+    }
+
+    /// <summary>
+    /// Displays the algorithm choice menu and starts the selected algorithm to solve the grid.
+    /// </summary>
+    /// <param name="grid">The grid to be solved</param>
+    public static void DisplayAlgorithmChoice(short[,] grid){
+        Console.Clear();
+        Console.WriteLine("Choose an algorithm :");
+        Console.WriteLine("1. Brute Force");
+        Console.WriteLine("2. Smart Brute Force");
+        string input = AwaitInput("", "");
+        int choice;
+        if(!int.TryParse(input, out choice)){
+            Console.WriteLine("Invalid choice");
+            DisplayAlgorithmChoice(grid);
+        }else{
+            Console.Clear();
+            bool breaked = false;
+            DisplayGrid(grid);
+            Console.WriteLine("--------------------");
+            if (choice == 1){
+                SolveBruteforce(grid, 100);
+            }else if (choice == 2){
+                SolveSmartBruteforce(grid, 100);
+            }else{
+                Console.WriteLine("Invalid choice");
+                breaked = true;
+                DisplayAlgorithmChoice(grid);
+            }
+            if(!breaked)
+                DisplayGrid(grid);
+        }
+    }
+
+    /// <summary>
+    /// Displays the grid on the console.
+    /// </summary>
+    /// <param name="grid">The grid to be displayed</param>
+    public static void DisplayGrid(short[,] grid){
+        for (int i = 0; i < grid.GetLength(0); i++){
+            for(int j = 0; j < grid.GetLength(1); j++){
+                Console.Write(grid[i, j] + " ");
+            }
+            Console.WriteLine();
+        }
     }
     
     /// <summary>
@@ -26,6 +85,21 @@ public class V2{
             input = fallbackValue;
         return input;
     }
+
+    /// <summary>
+    /// Displays the available grids and returns a dictionary containing the grid number and its name.
+    /// </summary>
+    /// <returns>Dictionary containing the grid number and its name.</returns>
+    private static Dictionary<int, string> DisplayAvailableGrids(){
+        Dictionary<int, string> availableFiles = new Dictionary<int, string>();
+        List<string> files = Directory.EnumerateFiles(PATH).ToList();
+        for(int i = 0; i < files.Count; i++){
+            files[i] = files[i].Replace(PATH + "\\", "");
+            Console.WriteLine(i + 1 + " : " + files[i]);
+            availableFiles.Add(i + 1, files[i]);
+        }
+        return availableFiles;
+    }
     
     /// <summary>
     /// Loads a grid from a text file and returns it as a 2D short array.
@@ -34,8 +108,10 @@ public class V2{
     /// <param name="fileName">The name of the file containing the grid.</param>
     /// <param name="path">The path to the file, defaults to "../../../grids/".</param>
     /// <returns>A 2D short array representing the grid from the input file.</returns>
-    public short[,] LoadTxt(string fileName, string? path = "../../../grids/"){
-        string[] elements = SplitString(File.ReadAllText(path + fileName), ' ');
+    public static short[,] LoadTxt(string fileName){
+        if (!Directory.Exists(PATH))
+            Directory.CreateDirectory(PATH);
+        string[] elements = SplitString(File.ReadAllText(PATH + "/" + fileName), ' ');
         short[] flattenArray = new short[elements.Length];
         for (int i = 0; i < elements.Length; i++)
             flattenArray[i] = short.Parse(elements[i]);
@@ -58,9 +134,10 @@ public class V2{
         int startIndex = 0;
         for (int i = 0; i < input.Length; i++){
             if (input[i] == separator){
-                elements.Add(SubString(input, startIndex, i));
+                elements.Add(SubString(input, startIndex, i - 1));
                 startIndex = i + 1;
-            }
+            }else if (i == input.Length - 1)
+                elements.Add(SubString(input, startIndex, i));
         }
         string[] output = new string[elements.Count];
         for(int i = 0; i < elements.Count; i++)
@@ -75,9 +152,9 @@ public class V2{
     /// <param name="start">The starting index of the substring.</param>
     /// <param name="end">The ending index of the substring.</param>
     /// <returns>The substring of the input string between the specified indices.</returns>
-    public static string SubString(string input, int start, int end){
+    private static string SubString(string input, int start, int end){
         string output = "";
-        for (int i = start; i < end; i++)
+        for (int i = start; i <= end; i++)
             output += input[i];
         return output;
     }
@@ -87,7 +164,7 @@ public class V2{
     /// </summary>
     /// <param name="grid">The grid to be solved, represented as a 2D short array.</param>
     /// <param name="fillPercentage">The fill percentage of the grid (e.g. 30 for 30%).</param>
-    public static void SolveSmartBruteforce(short[,] grid, int fillPercentage) {
+    private static void SolveSmartBruteforce(short[,] grid, int fillPercentage) {
         // TODO
         List<short> possibilities = new List<short>();
         do{
@@ -113,7 +190,7 @@ public class V2{
     /// </summary>
     /// <param name="grid">The grid to be solved, represented as a 2D short array.</param>
     /// <param name="fillPercentage">The fill percentage of the grid (e.g. 30 for 30%).</param>
-    public static void SolveBruteforce(short[,] grid, int fillPercentage) {
+    private static void SolveBruteforce(short[,] grid, int fillPercentage) {
         // TODO
         Random random = new Random();
         int gridLength = grid.GetLength(0);

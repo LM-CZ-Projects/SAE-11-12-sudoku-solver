@@ -10,9 +10,9 @@ public class DokuSolver{
     /// <summary>
     /// Input method of the program
     /// </summary>
-    public static void Main(){
-        Menu.DisplayMain();
-    }
+    // public static void Main(){
+    //     Menu.DisplayMain();
+    // }
 }
 
 /// <summary>
@@ -224,9 +224,8 @@ static class Menu{
     private static string AwaitInput(string? inputMessage = null, string fallbackValue = ""){
         if(inputMessage != null) Console.WriteLine(inputMessage);
         string input = Console.ReadLine() ?? fallbackValue;
-        if (input == ""){
+        if (input == "")
             input = fallbackValue;
-        }
         return input;
     }
 }

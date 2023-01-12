@@ -1,6 +1,4 @@
-﻿using System.Text;
-
-namespace doku_solver;
+﻿namespace doku_solver;
 
 public class V2{
     
@@ -64,9 +62,8 @@ public class V2{
     /// <param name="grid">The grid to be displayed</param>
     public static void DisplayGrid(short[,] grid){
         for (int i = 0; i < grid.GetLength(0); i++){
-            for(int j = 0; j < grid.GetLength(1); j++){
+            for(int j = 0; j < grid.GetLength(1); j++)
                 Console.Write(grid[i, j] + " ");
-            }
             Console.WriteLine();
         }
     }
@@ -165,24 +162,25 @@ public class V2{
     /// <param name="grid">The grid to be solved, represented as a 2D short array.</param>
     /// <param name="fillPercentage">The fill percentage of the grid (e.g. 30 for 30%).</param>
     private static void SolveSmartBruteforce(short[,] grid, int fillPercentage) {
-        // TODO
         List<short> possibilities = new List<short>();
-        do{
+        bool breaked = false;
+        while (!IsSolved(grid) && !breaked){
             if (GetFillPercentage(grid) <= fillPercentage){
                 for (int i = 0; i < grid.GetLength(0); i++) {
                     for (int j = 0; j < grid.GetLength(0); j++) {
-                        if (grid[ i, j ] != 0)
-                            continue;
-                        possibilities.Clear();
-                        for (short r = 1; r <= grid.GetLength(0); r++)
-                            if (IsValidPlacement(grid, r, i, j))
-                                possibilities.Add(r);
-                        if (possibilities.Count == 1)
-                            grid[ i, j ] = possibilities[ 0 ];
+                        if (grid[i, j] == 0){
+                            possibilities.Clear();
+                            for (short r = 1; r <= grid.GetLength(0); r++)
+                                if (IsValidPlacement(grid, r, i, j))
+                                    possibilities.Add(r);
+                            if (possibilities.Count == 1)
+                                grid[ i, j ] = possibilities[ 0 ];
+                        }
                     }
                 }
-            }
-        } while (!IsSolved(grid));
+            }else
+                breaked = true;
+        }
     }
     
     /// <summary>
@@ -191,15 +189,18 @@ public class V2{
     /// <param name="grid">The grid to be solved, represented as a 2D short array.</param>
     /// <param name="fillPercentage">The fill percentage of the grid (e.g. 30 for 30%).</param>
     private static void SolveBruteforce(short[,] grid, int fillPercentage) {
-        // TODO
         Random random = new Random();
         int gridLength = grid.GetLength(0);
-        do {
-            for (int i = 0; i < gridLength; i++)
-            for (int j = 0; j < gridLength; j++)
-                if (grid[ i, j ] == 0)
-                    grid[ i, j ] = (short) random.Next(1, gridLength + 1);
-        } while (!IsSolved(grid));
+        bool breaked = false;
+        while (!IsSolved(grid) && !breaked){
+            if (GetFillPercentage(grid) <= fillPercentage){
+                for (int i = 0; i < gridLength; i++)
+                for (int j = 0; j < gridLength; j++)
+                    if (grid[ i, j ] == 0)
+                        grid[ i, j ] = (short) random.Next(1, gridLength + 1);
+            }else
+                breaked = true;
+        }
     }
     
     /// <summary>
@@ -326,10 +327,11 @@ public class V2{
     /// <param name="row">The row of the slot</param>
     /// <returns>True if the number is already in the row, otherwise false</returns>
     private static bool IsInRow(short[,] grid, int number, int row) {
-        for (int i = 0; i < grid.GetLength(0); i++)
+        bool returnValue = false;
+        for (int i = 0; i < grid.GetLength(0) && !returnValue; i++)
             if (grid[row, i] == number)
-                return true;
-        return false;
+                returnValue = true;
+        return returnValue;
     }
     
     /// <summary>
@@ -340,10 +342,11 @@ public class V2{
     /// <param name="column">The column of the slot</param>
     /// <returns>True if the number is already in the column, otherwise false</returns>
     private static bool IsInColumn(short[,] grid, int number, int column) {
-        for (int i = 0; i < grid.GetLength(0); i++)
+        bool returnValue = false;
+        for (int i = 0; i < grid.GetLength(0) && !returnValue; i++)
             if (grid[i, column] == number)
-                return true;
-        return false;
+                returnValue = true;
+        return returnValue;
     }
     
     /// <summary>
@@ -358,11 +361,11 @@ public class V2{
         int boxSize = (int) Math.Sqrt(grid.GetLength(0));
         int localRow = row - row % boxSize;
         int localColumn = column - column % boxSize;
-        
-        for (int i = localRow; i < localRow + boxSize; i++)
-        for (int j = localColumn; j < localColumn + boxSize; j++)
-            if (grid[i, j] == number)
-                return true;
-        return false;
+        bool returnValue = false;
+        for (int i = localRow; i < localRow + boxSize && !returnValue; i++)
+            for (int j = localColumn; j < localColumn + boxSize && !returnValue; j++)
+                if (grid[i, j] == number)
+                    returnValue = true;
+        return returnValue;
     }
 }

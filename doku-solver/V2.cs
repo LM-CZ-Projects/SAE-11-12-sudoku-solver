@@ -43,9 +43,9 @@ public class V2{
             DisplayGrid(grid);
             Console.WriteLine("--------------------");
             if (choice == 1){
-                SolveBruteforce(grid, 100);
+                SolveBruteforce(grid);
             }else if (choice == 2){
-                SolveSmartBruteforce(grid, 100);
+                SolveSmartBruteforce(grid);
             }else{
                 Console.WriteLine("Invalid choice");
                 breaked = true;
@@ -106,6 +106,7 @@ public class V2{
     /// <param name="path">The path to the file, defaults to "../../../grids/".</param>
     /// <returns>A 2D short array representing the grid from the input file.</returns>
     public static short[,] LoadTxt(string fileName){
+        // Check if the PATH directory exists, and if not, creates one
         if (!Directory.Exists(PATH))
             Directory.CreateDirectory(PATH);
         string[] elements = SplitString(File.ReadAllText(PATH + "/" + fileName), ' ');
@@ -155,52 +156,53 @@ public class V2{
             output += input[i];
         return output;
     }
-    
+
     /// <summary>
     /// Solves a sudoku-like grid using a smart brute-force algorithm.
     /// </summary>
     /// <param name="grid">The grid to be solved, represented as a 2D short array.</param>
-    /// <param name="fillPercentage">The fill percentage of the grid (e.g. 30 for 30%).</param>
-    private static void SolveSmartBruteforce(short[,] grid, int fillPercentage) {
+    private static void SolveSmartBruteforce(short[,] grid) {
         List<short> possibilities = new List<short>();
-        bool breaked = false;
-        while (!IsSolved(grid) && !breaked){
-            if (GetFillPercentage(grid) <= fillPercentage){
-                for (int i = 0; i < grid.GetLength(0); i++) {
-                    for (int j = 0; j < grid.GetLength(0); j++) {
-                        if (grid[i, j] == 0){
-                            possibilities.Clear();
-                            for (short r = 1; r <= grid.GetLength(0); r++)
-                                if (IsValidPlacement(grid, r, i, j))
-                                    possibilities.Add(r);
-                            if (possibilities.Count == 1)
-                                grid[ i, j ] = possibilities[ 0 ];
-                        }
+        while (!IsSolved(grid)){
+            for (int i = 0; i < grid.GetLength(0); i++) {
+                for (int j = 0; j < grid.GetLength(0); j++) {
+                    if (grid[i, j] == 0){
+                        possibilities.Clear();
+                        for (short r = 1; r <= grid.GetLength(0); r++)
+                            if (IsValidPlacement(grid, r, i, j))
+                                possibilities.Add(r);
+                        if (possibilities.Count == 1)
+                            grid[ i, j ] = possibilities[ 0 ];
                     }
                 }
-            }else
-                breaked = true;
+            }
         }
     }
-    
+
     /// <summary>
     /// Solves a sudoku-like grid using a brute-force algorithm.
     /// </summary>
     /// <param name="grid">The grid to be solved, represented as a 2D short array.</param>
-    /// <param name="fillPercentage">The fill percentage of the grid (e.g. 30 for 30%).</param>
-    private static void SolveBruteforce(short[,] grid, int fillPercentage) {
+    private static void SolveBruteforce(short[,] grid) {
         Random random = new Random();
+        short[,] changedGrid = CopyGrid(grid);
         int gridLength = grid.GetLength(0);
-        bool breaked = false;
-        while (!IsSolved(grid) && !breaked){
-            if (GetFillPercentage(grid) <= fillPercentage){
-                for (int i = 0; i < gridLength; i++)
-                for (int j = 0; j < gridLength; j++)
-                    if (grid[ i, j ] == 0)
-                        grid[ i, j ] = (short) random.Next(1, gridLength + 1);
-            }else
-                breaked = true;
+        while (!IsSolved(changedGrid)){
+            CopyGridToGrid(grid, changedGrid);
+            bool reset = false;
+            for (int i = 0; i < gridLength && !reset; i++){
+                for (int j = 0; j < gridLength && !reset; j++){
+                    if (changedGrid[i, j] == 0){
+                        List<short> possibilities = GetSlotPossibilities(changedGrid, i, j);
+                        if (possibilities.Count > 0)
+                            changedGrid[i, j] = possibilities[random.Next(0, possibilities.Count)];
+                        else
+                            reset = true;
+                    }
+                }
+            }
         }
+        CopyGridToGrid(changedGrid, grid);
     }
     
     /// <summary>
@@ -218,6 +220,21 @@ public class V2{
             }
         }
         return isSolved;
+    }
+    
+    private static short[,] CopyGrid(short[,] oldGrid){
+        short[,] copy = new short[oldGrid.GetLength(0), oldGrid.GetLength(1)];
+        for(short i = 0; i < oldGrid.GetLength(0); i++)
+            for(short j = 0; j < oldGrid.GetLength(1); j++)
+                copy[i,j] = oldGrid[i,j];
+        return copy;
+    }
+    
+    private static short[,] CopyGridToGrid(short[,] oldGrid, short[,] newGrid){
+        for(short i = 0; i < oldGrid.GetLength(0); i++)
+            for(short j = 0; j < oldGrid.GetLength(1); j++)
+                newGrid[i,j] = oldGrid[i,j];
+        return newGrid;
     }
 
     /// <summary>

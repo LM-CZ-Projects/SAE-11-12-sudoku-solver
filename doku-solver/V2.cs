@@ -11,7 +11,7 @@ public class V2{
     /// <summary>
     /// Displays the main menu, allowing the user to select a grid file and an algorithm to solve it.
     /// </summary>
-    public static void DisplayMenu(){
+    private static void DisplayMenu(){
         Dictionary<int, string> files = DisplayAvailableGrids();
         string input = AwaitInput("Welcome to the Doku Solver! Select grid file to solve :", "");
         int fileIndex;
@@ -27,7 +27,7 @@ public class V2{
     /// Displays the algorithm choice menu and starts the selected algorithm to solve the grid.
     /// </summary>
     /// <param name="grid">The grid to be solved</param>
-    public static void DisplayAlgorithmChoice(short[,] grid){
+    private static void DisplayAlgorithmChoice(short[,] grid){
         Console.Clear();
         Console.WriteLine("Choose an algorithm :");
         Console.WriteLine("1. Brute Force");
@@ -60,7 +60,7 @@ public class V2{
     /// Displays the grid on the console.
     /// </summary>
     /// <param name="grid">The grid to be displayed</param>
-    public static void DisplayGrid(short[,] grid){
+    private static void DisplayGrid(short[,] grid){
         for (int i = 0; i < grid.GetLength(0); i++){
             for(int j = 0; j < grid.GetLength(1); j++)
                 Console.Write(grid[i, j] + " ");
@@ -104,7 +104,7 @@ public class V2{
     /// </summary>
     /// <param name="fileName">The name of the file containing the grid.</param>
     /// <returns>A 2D short array representing the grid from the input file.</returns>
-    public static short[,] LoadTxt(string fileName){
+    private static short[,] LoadTxt(string fileName){
         // Create path target folder if not exists
         if (!Directory.Exists(PATH))
             Directory.CreateDirectory(PATH);
@@ -130,7 +130,7 @@ public class V2{
     /// <param name="input">The input string to be split.</param>
     /// <param name="separator">The separator to use when splitting the input string.</param>
     /// <returns>An array of strings resulting from splitting the input string using the specified separator.</returns>
-    public static string[] SplitString(string input, char separator){
+    private static string[] SplitString(string input, char separator){
         List<string> elements = new List<string>();
         int startIndex = 0;
         for (int i = 0; i < input.Length; i++){

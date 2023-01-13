@@ -42,11 +42,11 @@ public class V2{
             bool breaked = false;
             DisplayGrid(grid);
             Console.WriteLine("--------------------");
-            if (choice == 1){
+            if (choice == 1)
                 SolveBruteforce(grid);
-            }else if (choice == 2){
+            else if (choice == 2)
                 SolveSmartBruteforce(grid);
-            }else{
+            else{
                 Console.WriteLine("Invalid choice");
                 breaked = true;
                 DisplayAlgorithmChoice(grid);
@@ -133,13 +133,12 @@ public class V2{
     private static string[] SplitString(string input, char separator){
         List<string> elements = new List<string>();
         int startIndex = 0;
-        for (int i = 0; i < input.Length; i++){
+        for (int i = 0; i < input.Length; i++)
             if (input[i] == separator){
                 elements.Add(SubString(input, startIndex, i - 1));
                 startIndex = i + 1;
             }else if (i == input.Length - 1)
                 elements.Add(SubString(input, startIndex, i));
-        }
         string[] output = new string[elements.Count];
         for(int i = 0; i < elements.Count; i++)
             output[i] = elements[i];
@@ -167,8 +166,8 @@ public class V2{
     private static void SolveSmartBruteforce(short[,] grid) {
         List<short> possibilities = new List<short>();
         while (!IsSolved(grid)){
-            for (int i = 0; i < grid.GetLength(0); i++) {
-                for (int j = 0; j < grid.GetLength(0); j++) {
+            for (int i = 0; i < grid.GetLength(0); i++) 
+                for (int j = 0; j < grid.GetLength(0); j++) 
                     if (grid[i, j] == 0){
                         possibilities.Clear();
                         for (short r = 1; r <= grid.GetLength(0); r++)
@@ -177,8 +176,6 @@ public class V2{
                         if (possibilities.Count == 1)
                             grid[ i, j ] = possibilities[ 0 ];
                     }
-                }
-            }
         }
     }
 
@@ -193,8 +190,8 @@ public class V2{
         while (!IsSolved(changedGrid)){
             CopyGridToGrid(grid, changedGrid);
             bool reset = false;
-            for (int i = 0; i < gridLength && !reset; i++){
-                for (int j = 0; j < gridLength && !reset; j++){
+            for (int i = 0; i < gridLength && !reset; i++)
+                for (int j = 0; j < gridLength && !reset; j++)
                     if (changedGrid[i, j] == 0){
                         List<short> possibilities = GetSlotPossibilities(changedGrid, i, j);
                         if (possibilities.Count > 0)
@@ -202,8 +199,6 @@ public class V2{
                         else
                             reset = true;
                     }
-                }
-            }
         }
         CopyGridToGrid(changedGrid, grid);
     }
@@ -216,12 +211,11 @@ public class V2{
     /// <returns>true if the grid is solved, else false</returns>
     private static bool IsSolved(short[ , ] tab) {
         bool isSolved = true;
-        for (int i = 0; i < tab.GetLength(0) && isSolved; i++){
+        for (int i = 0; i < tab.GetLength(0) && isSolved; i++)
             for (int j = 0; j < tab.GetLength(1) && isSolved; j++){
                 if(tab[i, j] == 0) isSolved = false;
                 if (GetSlotPossibilities(tab, i, j).Count != 0) isSolved = false;
             }
-        }
         return isSolved;
     }
     

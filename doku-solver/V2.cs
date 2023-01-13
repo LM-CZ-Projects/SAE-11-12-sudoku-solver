@@ -103,21 +103,24 @@ public class V2{
     /// The grid should have square dimensions and be space-separated.
     /// </summary>
     /// <param name="fileName">The name of the file containing the grid.</param>
-    /// <param name="path">The path to the file, defaults to "../../../grids/".</param>
     /// <returns>A 2D short array representing the grid from the input file.</returns>
     public static short[,] LoadTxt(string fileName){
-        // Check if the PATH directory exists, and if not, creates one
+        // Create path target folder if not exists
         if (!Directory.Exists(PATH))
             Directory.CreateDirectory(PATH);
+        // Load all numbers as a string array
         string[] elements = SplitString(File.ReadAllText(PATH + "/" + fileName), ' ');
+        // Convert string array to short array
         short[] flattenArray = new short[elements.Length];
         for (int i = 0; i < elements.Length; i++)
             flattenArray[i] = short.Parse(elements[i]);
+        // Make the short array 2D
         int gridLength = (int) Math.Sqrt(flattenArray.Length);
         short[,] grid = new short[gridLength, gridLength];
         for (int i = 0; i < gridLength; i++)
             for (int j = 0; j < gridLength; j++)
                 grid[i, j] = flattenArray[i * gridLength + j];
+        // Return loaded grid
         return grid;
     }
 

@@ -8,7 +8,8 @@ Ce projet de programmation en binôme en C# a pour objectif de réaliser un solv
 ## Utilisation
 * Compilez le .cs avec la commande `mcs V2.cs`
 * Exécutez le fichier compilé avec la commande `mono V2.exe`
-* Suivez les instructions affichées à l'écran pour choisir le fichier de sudoku à résoudre.
+* Suivez les instructions affichées à l'écran pour choisir le fichier de sudoku à résoudre (le dossier de recherche de grilles est le ./grids).
+* Suivez ensuite les instructions afin de choisir avec quel algorithme vous souhaitez résoudre le sudoku.
 * Le résultat sera affiché à l'écran.
 
 ## Format du fichier de sudoku

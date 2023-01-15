@@ -1,5 +1,5 @@
 # Sudoku Solver
-Ce projet de programmation en binôme en C# a pour objectif de réaliser un solveur de sudoku dans une console. Il peut être compilé avec mono et contient un menu interne pour choisir le fichier, avec un format txt ou json.
+Ce projet de programmation réalisé par Loïc MAES et Tom CZEKAJ en C# a pour objectif de réaliser un solveur de sudoku dans une console. Il peut être compilé avec mono et contient un menu interne pour choisir le fichier, avec un format txt ou json.
 
 ## Prérequis
 * Mono (si vous souhaitez compiler le code vous-même)
